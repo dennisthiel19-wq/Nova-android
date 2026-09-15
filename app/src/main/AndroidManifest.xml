@@ -9,6 +9,11 @@
 
     <queries>
         <intent><action android:name="android.speech.RecognitionService" /></intent>
+        <!-- Android 11+ hides installed apps unless NOVA declares that it may
+             look them up. Without these entries ChatGPT wrongly falls back to Chrome. -->
+        <package android:name="com.openai.chatgpt" />
+        <package android:name="com.google.android.apps.bard" />
+        <package android:name="com.anthropic.claude" />
     </queries>
 
     <application
