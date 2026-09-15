@@ -1,6 +1,8 @@
 package de.thiel.nova;
 
 import android.accessibilityservice.AccessibilityService;
+import android.accessibilityservice.GestureDescription;
+import android.graphics.Path;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.accessibility.AccessibilityEvent;
@@ -27,6 +29,7 @@ public class AssistantVoiceStarterService extends AccessibilityService {
         handler.postDelayed(this::pressVoiceButton, 120);
         handler.postDelayed(this::pressVoiceButton, 330);
         handler.postDelayed(this::pressVoiceButton, 680);
+        handler.postDelayed(this::tapVoicePositionFallback, 950);
     }
 
     private void pressVoiceButton() {
@@ -43,6 +46,29 @@ public class AssistantVoiceStarterService extends AccessibilityService {
 
     private String selectedPackage() {
         return AssistantProfiles.lastPackage(this);
+    }
+
+    /**
+     * ChatGPT's voice icon is sometimes not exposed with a readable label.
+     * On the Samsung prototype it is consistently the lower-right action.
+     * This fallback is strictly limited to the selected assistant app.
+     */
+    private void tapVoicePositionFallback() {
+        if (System.currentTimeMillis() - lastClick < 2500) return;
+        AccessibilityNodeInfo root = getRootInActiveWindow();
+        boolean selectedAppVisible = root != null && root.getPackageName() != null &&
+                selectedPackage().contentEquals(root.getPackageName());
+        if (root != null) root.recycle();
+        if (!selectedAppVisible) return;
+
+        float x = getResources().getDisplayMetrics().widthPixels * 0.885f;
+        float y = getResources().getDisplayMetrics().heightPixels * 0.850f;
+        Path path = new Path();
+        path.moveTo(x, y);
+        GestureDescription.StrokeDescription tap =
+                new GestureDescription.StrokeDescription(path, 0, 60);
+        if (dispatchGesture(new GestureDescription.Builder().addStroke(tap).build(), null, null))
+            lastClick = System.currentTimeMillis();
     }
 
     private AccessibilityNodeInfo findVoiceButton(AccessibilityNodeInfo node) {
