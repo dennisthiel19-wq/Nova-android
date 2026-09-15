@@ -47,46 +47,23 @@ public class WakeWordService extends Service implements RecognitionListener {
             String heard = line.toLowerCase(Locale.GERMAN).trim();
             if (heard.contains("hey nova") || heard.contains("hallo nova")) {
                 recognizer.cancel();
+                tts.speak("Hey Dennis, was geht? Was kann ich für dich tun?", TextToSpeech.QUEUE_FLUSH, null, "nova-greeting");
                 wakeScreenAndOpenChatGpt();
-                retry(1800);
+                retry(2600);
                 return;
             }
         }
     }
 
     /**
-     * NOVA is only the silent wake layer. The actual conversation continues
-     * in the user's installed ChatGPT app, with no API key required here.
+     * NOVA handles the wake word and familiar greeting; the user's installed
+     * ChatGPT app is opened for the following conversation, without an API key.
      */
     private void wakeScreenAndOpenChatGpt() {
-        try {
-            PowerManager power = getSystemService(PowerManager.class);
-            PowerManager.WakeLock wakeLock = power.newWakeLock(
-                    PowerManager.PARTIAL_WAKE_LOCK
-                            | PowerManager.ACQUIRE_CAUSES_WAKEUP
-                            | PowerManager.ON_AFTER_RELEASE,
-                    "NOVA:WakeScreen");
-            wakeLock.acquire(2500);
-        } catch (Exception ignored) {
-            // NOVA still opens ChatGPT if a phone blocks programmatic wake-up.
-        }
-
-        handler.postDelayed(() -> {
-            try {
-                Intent chatGpt = getPackageManager().getLaunchIntentForPackage("com.openai.chatgpt");
-                if (chatGpt != null) {
-                    chatGpt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                    startActivity(chatGpt);
-                } else {
-                    Intent browser = new Intent(Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://chatgpt.com"));
-                    browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(browser);
-                }
-            } catch (Exception ignored) {
-                // The foreground notification remains available as a fallback.
-            }
-        }, 650);
+        Intent wake = new Intent(this, WakeActivity.class);
+        wake.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        try { startActivity(wake); }
+        catch (Exception ignored) { /* The notification action remains available. */ }
     }
 
     private void retry(long delayMs) {
@@ -97,11 +74,16 @@ public class WakeWordService extends Service implements RecognitionListener {
     private Notification notification(String text) {
         Intent open = new Intent(this, MainActivity.class);
         PendingIntent pending = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        Intent openChatGpt = new Intent(this, WakeActivity.class);
+        PendingIntent chatGptPending = PendingIntent.getActivity(this, 1, openChatGpt,
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         return new Notification.Builder(this, CHANNEL)
-                .setContentTitle("NOVA 0.1")
+                .setContentTitle("NOVA 0.3")
                 .setContentText(text)
                 .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                 .setContentIntent(pending)
+                .addAction(new Notification.Action.Builder(
+                        android.R.drawable.ic_media_play, "ChatGPT öffnen", chatGptPending).build())
                 .setOngoing(true)
                 .build();
     }
