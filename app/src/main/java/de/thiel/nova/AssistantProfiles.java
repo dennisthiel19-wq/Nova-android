@@ -17,12 +17,18 @@ public final class AssistantProfiles {
         context.getSharedPreferences("nova", Context.MODE_PRIVATE).edit().putString("assistant_name_" + slot, name.trim()).apply();
     }
     public static int match(Context context, String spoken) {
-        String text = spoken.toLowerCase(Locale.GERMAN);
+        // Android may transcribe "ChatGPT" as "Chat GPT" or "Chat G P T".
+        // Remove spaces and punctuation before comparing wake phrases.
+        String text = normalise(spoken);
         for (int slot = 0; slot < APPS.length; slot++) {
-            String name = name(context, slot).trim().toLowerCase(Locale.GERMAN);
-            if (!name.isEmpty() && (text.contains("hey " + name) || text.contains("hallo " + name))) return slot;
+            String name = normalise(name(context, slot));
+            if (!name.isEmpty() && (text.contains("hey" + name) || text.contains("hallo" + name))) return slot;
         }
         return -1;
+    }
+
+    private static String normalise(String value) {
+        return value.toLowerCase(Locale.GERMAN).replaceAll("[^\\p{L}\\p{N}]", "");
     }
     public static void setLastPackage(Context context, String packageName) {
         context.getSharedPreferences("nova", Context.MODE_PRIVATE).edit().putString("last_assistant_package", packageName).apply();
