@@ -6,21 +6,21 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 
-/** A short visible bridge: wake the display first, then hand over to ChatGPT. */
+/** A short visible bridge: wake the display first, then hand over to the chosen AI. */
 public class WakeActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         setShowWhenLocked(true);
         setTurnScreenOn(true);
-        new Handler(Looper.getMainLooper()).postDelayed(this::openChatGpt, 300);
+        new Handler(Looper.getMainLooper()).postDelayed(this::openAssistant, 300);
     }
 
-    private void openChatGpt() {
+    private void openAssistant() {
         try {
-            Intent chatGpt = getPackageManager().getLaunchIntentForPackage("com.openai.chatgpt");
-            if (chatGpt != null) {
-                chatGpt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                startActivity(chatGpt);
+            Intent assistant = getPackageManager().getLaunchIntentForPackage(AssistantProfiles.lastPackage(this));
+            if (assistant != null) {
+                assistant.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(assistant);
             } else {
                 Intent browser = new Intent(Intent.ACTION_VIEW,
                         android.net.Uri.parse("https://chatgpt.com"));

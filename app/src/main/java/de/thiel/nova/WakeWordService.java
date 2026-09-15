@@ -4,14 +4,12 @@ import android.app.*;
 import android.content.Intent;
 import android.os.*;
 import android.speech.*;
-import android.speech.tts.TextToSpeech;
 import java.util.*;
 
 public class WakeWordService extends Service implements RecognitionListener {
     private static final String CHANNEL = "nova_listening";
     private SpeechRecognizer recognizer;
     private Intent speechIntent;
-    private TextToSpeech tts;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean stopping;
 
@@ -19,9 +17,6 @@ public class WakeWordService extends Service implements RecognitionListener {
         super.onCreate();
         createChannel();
         startForeground(101, notification("NOVA hört auf „Hey NOVA“"));
-        tts = new TextToSpeech(this, status -> {
-            if (status == TextToSpeech.SUCCESS) tts.setLanguage(Locale.GERMAN);
-        });
         recognizer = SpeechRecognizer.createSpeechRecognizer(this);
         recognizer.setRecognitionListener(this);
         speechIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
@@ -45,21 +40,24 @@ public class WakeWordService extends Service implements RecognitionListener {
         if (lines == null) return;
         for (String line : lines) {
             String heard = line.toLowerCase(Locale.GERMAN).trim();
-            if (heard.contains("hey nova") || heard.contains("hallo nova")) {
+            int assistantSlot = AssistantProfiles.match(this, heard);
+            if (assistantSlot >= 0) {
                 recognizer.cancel();
-                tts.speak("Hey Dennis, was geht? Was kann ich für dich tun?", TextToSpeech.QUEUE_FLUSH, null, "nova-greeting");
-                wakeScreenAndOpenChatGpt();
-                retry(2600);
+                AssistantProfiles.setLastPackage(this, AssistantProfiles.packageName(assistantSlot));
+                wakeScreenAndOpenAssistant();
+                // NOVA stays silent. The Accessibility Service starts the
+                // assistant's own voice control once its screen is visible.
+                retry(2200);
                 return;
             }
         }
     }
 
     /**
-     * NOVA handles the wake word and familiar greeting; the user's installed
-     * ChatGPT app is opened for the following conversation, without an API key.
+     * NOVA only handles the wake word. The user's installed ChatGPT app handles
+     * the conversation, without an API key and without a NOVA greeting.
      */
-    private void wakeScreenAndOpenChatGpt() {
+    private void wakeScreenAndOpenAssistant() {
         Intent wake = new Intent(this, WakeActivity.class);
         wake.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         try { startActivity(wake); }
@@ -74,8 +72,8 @@ public class WakeWordService extends Service implements RecognitionListener {
     private Notification notification(String text) {
         Intent open = new Intent(this, MainActivity.class);
         PendingIntent pending = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-        Intent openChatGpt = new Intent(this, WakeActivity.class);
-        PendingIntent chatGptPending = PendingIntent.getActivity(this, 1, openChatGpt,
+        Intent openAssistant = new Intent(this, WakeActivity.class);
+        PendingIntent assistantPending = PendingIntent.getActivity(this, 1, openAssistant,
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         return new Notification.Builder(this, CHANNEL)
                 .setContentTitle("NOVA 0.3")
@@ -83,7 +81,7 @@ public class WakeWordService extends Service implements RecognitionListener {
                 .setSmallIcon(android.R.drawable.ic_btn_speak_now)
                 .setContentIntent(pending)
                 .addAction(new Notification.Action.Builder(
-                        android.R.drawable.ic_media_play, "ChatGPT öffnen", chatGptPending).build())
+                        android.R.drawable.ic_media_play, "KI öffnen", assistantPending).build())
                 .setOngoing(true)
                 .build();
     }
@@ -99,7 +97,6 @@ public class WakeWordService extends Service implements RecognitionListener {
         stopping = true;
         handler.removeCallbacksAndMessages(null);
         if (recognizer != null) recognizer.destroy();
-        if (tts != null) tts.shutdown();
         super.onDestroy();
     }
 

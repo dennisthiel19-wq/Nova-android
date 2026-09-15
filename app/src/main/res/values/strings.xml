@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">NOVA</string>
+    <string name="voice_starter_description">Startet nach dem gewählten KI-Namen den sichtbaren Sprachbutton der ausgewählten KI-App. NOVA liest keine Chat-Inhalte und bleibt stumm.</string>
+</resources>

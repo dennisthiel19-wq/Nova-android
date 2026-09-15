@@ -25,11 +25,35 @@
         android:textColor="#FFFFFF"
         android:textSize="18sp" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="26dp"
+        android:text="Gib jeder KI ihren Namen (Reihenfolge: ChatGPT, Gemini, Claude):"
+        android:textColor="#AAB4C0" />
+
+    <EditText
+        android:id="@+id/chatgpt_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="Name für ChatGPT, z. B. Lina" />
+
+    <EditText android:id="@+id/gemini_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Name für Gemini, z. B. Atlas" />
+    <EditText android:id="@+id/claude_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="Name für Claude, z. B. Milo" />
+
+    <Button
+        android:id="@+id/save_assistant"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="KI-NAMEN SPEICHERN" />
+
     <Button
         android:id="@+id/toggle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="22dp"
         android:background="@drawable/button_bg"
         android:text="NOVA STARTEN"
         android:textColor="#07111D"
@@ -41,7 +65,15 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="22dp"
         android:gravity="center"
-        android:text="Danach sagen: Hey NOVA"
+        android:text="NOVA bleibt still und übergibt an die passende KI."
         android:textColor="#AAB4C0"
         android:textSize="15sp" />
+
+    <Button
+        android:id="@+id/accessibility"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="AUTOMATISCHEN SPRACHSTART AKTIVIEREN"
+        android:textSize="13sp" />
 </LinearLayout>
