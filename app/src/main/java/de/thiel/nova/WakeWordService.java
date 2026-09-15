@@ -47,11 +47,46 @@ public class WakeWordService extends Service implements RecognitionListener {
             String heard = line.toLowerCase(Locale.GERMAN).trim();
             if (heard.contains("hey nova") || heard.contains("hallo nova")) {
                 recognizer.cancel();
-                tts.speak("Ja, Dennis?", TextToSpeech.QUEUE_FLUSH, null, "nova-answer");
+                wakeScreenAndOpenChatGpt();
                 retry(1800);
                 return;
             }
         }
+    }
+
+    /**
+     * NOVA is only the silent wake layer. The actual conversation continues
+     * in the user's installed ChatGPT app, with no API key required here.
+     */
+    private void wakeScreenAndOpenChatGpt() {
+        try {
+            PowerManager power = getSystemService(PowerManager.class);
+            PowerManager.WakeLock wakeLock = power.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK
+                            | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                            | PowerManager.ON_AFTER_RELEASE,
+                    "NOVA:WakeScreen");
+            wakeLock.acquire(2500);
+        } catch (Exception ignored) {
+            // NOVA still opens ChatGPT if a phone blocks programmatic wake-up.
+        }
+
+        handler.postDelayed(() -> {
+            try {
+                Intent chatGpt = getPackageManager().getLaunchIntentForPackage("com.openai.chatgpt");
+                if (chatGpt != null) {
+                    chatGpt.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(chatGpt);
+                } else {
+                    Intent browser = new Intent(Intent.ACTION_VIEW,
+                            android.net.Uri.parse("https://chatgpt.com"));
+                    browser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(browser);
+                }
+            } catch (Exception ignored) {
+                // The foreground notification remains available as a fallback.
+            }
+        }, 650);
     }
 
     private void retry(long delayMs) {
