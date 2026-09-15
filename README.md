@@ -1,4 +1,4 @@
-# NOVA 0.8
+# NOVA 1.0
 
 Erster Android-Prototyp für Samsung Galaxy mit Android 15.
 
@@ -10,7 +10,7 @@ Erster Android-Prototyp für Samsung Galaxy mit Android 15.
 4. **„Hey NOVA“** sagen.
 5. NOVA bleibt still, öffnet die KI zum gesprochenen Namen und startet dort den Sprachmodus.
 
-Die Benachrichtigung zeigt an, dass der Mikrofon-Dienst aktiv ist. Diese Version nutzt bewusst keine API und kein Spotify. Du kannst drei Namen für ChatGPT, Gemini und Claude festlegen und dann zum Beispiel „Hey Lina“, „Hey Atlas“ oder „Hey Milo“ sagen. „Hey ChatGPT“, „Hey Chat GPT“ und „Hey Chat G P T“ werden gleich behandelt. Unter **Automatischen Sprachstart aktivieren** muss einmalig NOVA – Sprachstart als Bedienungshilfe erlaubt werden. NOVA 0.8 erkennt die installierte ChatGPT-App korrekt und fällt nicht mehr auf den Browser zurück.
+Die Benachrichtigung zeigt an, dass der Mikrofon-Dienst aktiv ist. Diese Version nutzt bewusst keine API und kein Spotify. Du kannst drei Namen für ChatGPT, Gemini und Claude festlegen und dann zum Beispiel „Hey Lina“, „Hey Atlas“ oder „Hey Milo“ sagen. „Hey ChatGPT“, „Hey Chat GPT“ und „Hey Chat G P T“ werden gleich behandelt. Unter **Automatischen Sprachstart aktivieren** muss einmalig NOVA – Sprachstart als Bedienungshilfe erlaubt werden. NOVA 1.0 öffnet die KI ohne zusätzliche Wartezeit und prüft den Sprachbutton direkt mehrfach nach dem Öffnen.
 
 ## APK automatisch bauen
 

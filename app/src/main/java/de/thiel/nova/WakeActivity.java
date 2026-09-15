@@ -12,7 +12,9 @@ public class WakeActivity extends Activity {
         super.onCreate(state);
         setShowWhenLocked(true);
         setTurnScreenOn(true);
-        new Handler(Looper.getMainLooper()).postDelayed(this::openAssistant, 300);
+        // Hand over immediately; the accessibility service follows as soon as
+        // the assistant's window appears.
+        new Handler(Looper.getMainLooper()).postDelayed(this::openAssistant, 40);
     }
 
     private void openAssistant() {

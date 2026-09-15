@@ -47,7 +47,9 @@ public class WakeWordService extends Service implements RecognitionListener {
                 wakeScreenAndOpenAssistant();
                 // NOVA stays silent. The Accessibility Service starts the
                 // assistant's own voice control once its screen is visible.
-                retry(2200);
+                // Do not immediately take the microphone back while the
+                // assistant is bringing up its live conversation.
+                retry(10000);
                 return;
             }
         }

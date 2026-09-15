@@ -1,6 +1,8 @@
 package de.thiel.nova;
 
 import android.accessibilityservice.AccessibilityService;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import java.util.Locale;
@@ -12,16 +14,28 @@ import java.util.Locale;
  */
 public class AssistantVoiceStarterService extends AccessibilityService {
     private long lastClick;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getPackageName() == null ||
                 !selectedPackage().contentEquals(event.getPackageName()) ||
                 System.currentTimeMillis() - lastClick < 2500) return;
+        pressVoiceButton();
+        // Check several times while ChatGPT draws its composer. The first
+        // successful click wins, so this adds no waiting after it is ready.
+        handler.removeCallbacksAndMessages(null);
+        handler.postDelayed(this::pressVoiceButton, 120);
+        handler.postDelayed(this::pressVoiceButton, 330);
+        handler.postDelayed(this::pressVoiceButton, 680);
+    }
+
+    private void pressVoiceButton() {
+        if (System.currentTimeMillis() - lastClick < 2500) return;
         AccessibilityNodeInfo root = getRootInActiveWindow();
         AccessibilityNodeInfo voice = findVoiceButton(root);
         if (voice != null) {
-            lastClick = System.currentTimeMillis();
-            voice.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            if (voice.performAction(AccessibilityNodeInfo.ACTION_CLICK))
+                lastClick = System.currentTimeMillis();
             voice.recycle();
         }
         if (root != null) root.recycle();
@@ -36,9 +50,15 @@ public class AssistantVoiceStarterService extends AccessibilityService {
         CharSequence label = node.getContentDescription();
         if (label == null) label = node.getText();
         String text = label == null ? "" : label.toString().toLowerCase(Locale.GERMAN);
+        String id = node.getViewIdResourceName();
+        id = id == null ? "" : id.toLowerCase(Locale.ROOT);
         boolean looksLikeVoice = text.contains("voice") || text.contains("sprach") ||
-                text.contains("unterhaltung") || text.contains("audio");
-        if (looksLikeVoice && node.isClickable()) return AccessibilityNodeInfo.obtain(node);
+                text.contains("unterhaltung") || text.contains("audio") ||
+                id.contains("voice") || id.contains("audio") || id.contains("microphone");
+        if (looksLikeVoice) {
+            AccessibilityNodeInfo clickable = clickableParent(node);
+            if (clickable != null) return clickable;
+        }
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo result = findVoiceButton(node.getChild(i));
             if (result != null) return result;
@@ -46,5 +66,17 @@ public class AssistantVoiceStarterService extends AccessibilityService {
         return null;
     }
 
+    private AccessibilityNodeInfo clickableParent(AccessibilityNodeInfo node) {
+        AccessibilityNodeInfo current = AccessibilityNodeInfo.obtain(node);
+        while (current != null) {
+            if (current.isClickable()) return current;
+            AccessibilityNodeInfo parent = current.getParent();
+            current.recycle();
+            current = parent;
+        }
+        return null;
+    }
+
     @Override public void onInterrupt() { }
+    @Override public void onDestroy() { handler.removeCallbacksAndMessages(null); super.onDestroy(); }
 }
